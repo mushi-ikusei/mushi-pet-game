@@ -349,10 +349,18 @@ const MIN_TRAIN_STAMINA = 5;
 const INJURY_DURATION_MS = 45000;
 const INJURY_MOOD_PENALTY = 25;
 const INJURY_STAT_PENALTY = 3;
-const INJURY_QUALITY_PENALTY = 25;
 
 const AWAKENING_CHANCE = 0.1;
-const AWAKENING_QUALITY_BONUS = 20;
+
+// 育成度 (0-100) is the trained power+speed+technique total, scaled against the
+// highest sum a larva can realistically end adulthood with. Verified by
+// simulating several playstyles (pure-pat: 0, casual mixed: ~25-40, deliberate
+// balanced training: ~80, all-in training that never feeds: ~185-190) --
+// 185 keeps that whole spread meaningful across 0-100 instead of everyone
+// clustering near the top.
+const IKUSEIDO_STAT_MAX = 185;
+const INJURY_IKUSEIDO_PENALTY = Math.round(IKUSEIDO_STAT_MAX * 0.25);
+const AWAKENING_IKUSEIDO_BONUS = Math.round(IKUSEIDO_STAT_MAX * 0.20);
 
 function injuryChance(stamina){
   // 0% at stamina 60+, ramps up to 45% as stamina approaches 0
@@ -477,15 +485,16 @@ function applyElapsed(pet, ms){
   pet.mood = clamp(pet.mood - moodRate*sec, 0, 100);
 }
 
-// Care quality only ever moves via discrete events (injury, the awakening
-// event) -- never drifts with elapsed real time -- then skews the random
-// species roll at eclosion. See rollTier().
-function careQuality(pet){
-  return clamp(pet.careQuality, 0, 100);
+// 育成度 is derived from trained power+speed+technique (so it only ever moves
+// when those do -- training, injury, the awakening event -- never drifts with
+// elapsed real time), then skews the random species roll at eclosion. See rollTier().
+function ikuseido(pet){
+  const sum = pet.trained.power + pet.trained.speed + pet.trained.technique + (pet.ikuseiBonus||0);
+  return clamp(Math.round(sum / IKUSEIDO_STAT_MAX * 100), 0, 100);
 }
 
-function applyInjuryQualityPenalty(pet){
-  pet.careQuality = clamp(pet.careQuality - INJURY_QUALITY_PENALTY, 0, 100);
+function applyInjuryIkuseidoPenalty(pet){
+  pet.ikuseiBonus = (pet.ikuseiBonus||0) - INJURY_IKUSEIDO_PENALTY;
 }
 
 function updateInjuryStatus(pet){
@@ -552,7 +561,7 @@ function hatchEgg(family){
     mood: 80,
     injured: false,
     injuredUntil: 0,
-    careQuality: 50,
+    ikuseiBonus: 0,
     trained: {power:0, speed:0, technique:0},
     stageStart: Date.now(),
     pupaEndAt: null,
@@ -620,9 +629,9 @@ function doTrain(stat){
     pet.trained.power = Math.max(0, pet.trained.power - INJURY_STAT_PENALTY);
     pet.trained.speed = Math.max(0, pet.trained.speed - INJURY_STAT_PENALTY);
     pet.trained.technique = Math.max(0, pet.trained.technique - INJURY_STAT_PENALTY);
-    applyInjuryQualityPenalty(pet);
+    applyInjuryIkuseidoPenalty(pet);
     save();
-    showEvoModal(`スタミナが少ない状態で無理に鍛えたら…<br><b>けがをしてしまった！</b><br>力・速さ・技が少し下がり、お世話の質も大きく落ちてしまった…<br>${Math.round(INJURY_DURATION_MS/1000)}秒ほどトレーニングを休むことに…`, imgTag(IMG.bandage,'けが'));
+    showEvoModal(`スタミナが少ない状態で無理に鍛えたら…<br><b>けがをしてしまった！</b><br>力・速さ・技が少し下がり、育成度も大きく落ちてしまった…<br>${Math.round(INJURY_DURATION_MS/1000)}秒ほどトレーニングを休むことに…`, imgTag(IMG.bandage,'けが'));
     return;
   }
 
@@ -672,8 +681,8 @@ function checkEvolution(){
       pet.stage = 'pupa';
       pet.pupaEndAt = Date.now() + PUPA_DURATION_MS;
       if(Math.random() < AWAKENING_CHANCE){
-        pet.careQuality = clamp(pet.careQuality + AWAKENING_QUALITY_BONUS, 0, 100);
-        showEvoModal(`<span class="awaken-text">覚醒</span><br>お世話の質が20上がりました！`, pupaSVG());
+        pet.ikuseiBonus = (pet.ikuseiBonus||0) + AWAKENING_IKUSEIDO_BONUS;
+        showEvoModal(`<span class="awaken-text">覚醒</span><br>育成度が20上がりました！`, pupaSVG());
       } else {
         showEvoModal(`さなぎになった…<br>しばらく静かに見守ろう。`, pupaSVG());
       }
@@ -684,7 +693,7 @@ function checkEvolution(){
 function finishPupa(){
   const pet = state.pet;
   if(!pet || pet.stage!=='pupa') return;
-  const tier = rollTier(careQuality(pet));
+  const tier = rollTier(ikuseido(pet));
   const list = SPECIES[pet.family];
   const sp = list.find(s=>s.tier===tier) || list[0];
   pet.speciesId = sp.id;
@@ -851,9 +860,9 @@ function renderRaise(){
           <div class="stat-chip">💪 力 <b>${pet.trained.power}</b></div>
           <div class="stat-chip">⚡ 速さ <b>${pet.trained.speed}</b></div>
           <div class="stat-chip">🎯 技 <b>${pet.trained.technique}</b></div>
-          <div class="stat-chip">❤ お世話の質 <b>${Math.round(careQuality(pet))}</b></div>
+          <div class="stat-chip">🌱 育成度 <b>${ikuseido(pet)}</b></div>
         </div>
-        <p style="text-align:center;margin-top:2px;">お世話の質が高いほど、レアな成虫が生まれやすくなります(結果には運も影響します)。けがをすると質が大きく下がり、さなぎになる瞬間にまれに「覚醒」が起きると質が上がります。</p>
+        <p style="text-align:center;margin-top:2px;">育成度(力・速さ・技の鍛え具合)が高いほど、レアな成虫が生まれやすくなります(結果には運も影響します)。けがをすると育成度が大きく下がり、さなぎになる瞬間にまれに「覚醒」が起きると育成度が上がります。</p>
       </div>
     `;
     document.getElementById('btnFeed').onclick = doFeed;
