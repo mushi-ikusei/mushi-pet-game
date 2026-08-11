@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>虫ペット 〜カブト・クワガタ育成記〜</title>
+<style>
+  :root{
+    --bg-dark:#1c2a1a;
+    --panel:#2f4327;
+    --panel-light:#3d5732;
+    --wood:#6b4a2b;
+    --wood-dark:#4a3119;
+    --cream:#f5ecd0;
+    --accent:#e8b23d;
+    --accent2:#7bc96f;
+    --danger:#d9534f;
+    --text:#f5ecd0;
+    --sub:#c9d9b8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:radial-gradient(ellipse at top,#2d4025,#141f11 70%);
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    padding:16px;
+  }
+  #phone{
+    width:100%;
+    max-width:460px;
+    background:linear-gradient(180deg,var(--wood),var(--wood-dark));
+    border-radius:28px;
+    padding:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.05);
+  }
+  #screen{
+    background:linear-gradient(180deg,var(--panel),#25351f);
+    border-radius:18px;
+    padding:14px;
+    min-height:560px;
+    box-shadow:inset 0 2px 12px rgba(0,0,0,0.5);
+    position:relative;
+    overflow:hidden;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+    padding:6px 10px;
+    background:rgba(0,0,0,0.25);
+    border-radius:12px;
+  }
+  header .title{
+    font-size:14px;
+    font-weight:bold;
+    letter-spacing:1px;
+  }
+  header .currency{
+    font-size:14px;
+    font-weight:bold;
+    color:var(--accent);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  header .currency img{width:20px;height:20px;object-fit:contain;}
+  nav#tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  nav#tabs button{
+    flex:1;
+    padding:9px 4px;
+    border:none;
+    border-radius:10px;
+    background:rgba(255,255,255,0.06);
+    color:var(--sub);
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.15s;
+  }
+  nav#tabs button.active{
+    background:var(--accent2);
+    color:#173a13;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  }
+  .panel{
+    background:rgba(0,0,0,0.2);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:12px;
+  }
+  .hidden{display:none !important;}
+  .center{text-align:center;}
+  h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+  h3{margin:0 0 6px;font-size:13px;color:var(--sub);}
+  p{font-size:12.5px;line-height:1.6;color:var(--sub);margin:4px 0;}
+  .bug-stage{
+    width:150px;
+    height:150px;
+    margin:0 auto 8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+  .bug-stage img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,0.5));}
+  .bug-stage svg{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,0.5));}
+  .injury-badge{
+    position:absolute;bottom:2px;right:2px;width:38px;height:38px;
+    object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));
+  }
+  .pet-name{font-size:17px;font-weight:bold;text-align:center;color:var(--cream);}
+  .pet-sub{font-size:11.5px;text-align:center;color:var(--sub);margin-bottom:8px;}
+  .meter-row{margin:6px 0;}
+  .meter-label{
+    display:flex;justify-content:space-between;
+    font-size:11px;color:var(--sub);margin-bottom:2px;
+  }
+  .meter-bg{
+    width:100%;height:10px;border-radius:6px;
+    background:rgba(0,0,0,0.35);
+    overflow:hidden;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .meter-fill{height:100%;border-radius:6px;transition:width .4s ease;}
+  .fill-hunger{background:linear-gradient(90deg,#e8b23d,#f4d374);}
+  .fill-stamina{background:linear-gradient(90deg,#4f9ee0,#7cc4f5);}
+  .fill-mood{background:linear-gradient(90deg,#e0608a,#f090b0);}
+  .fill-hp{background:linear-gradient(90deg,#7bc96f,#a8e79c);}
+  .fill-growth{background:linear-gradient(90deg,#b98af0,#d9b8f7);}
+  .stat-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+    margin-top:8px;font-size:12px;
+  }
+  .stat-chip{
+    background:rgba(255,255,255,0.06);
+    border-radius:8px;padding:6px 8px;
+    display:flex;justify-content:space-between;
+  }
+  .stat-chip b{color:var(--accent2);}
+  .actions{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;
+  }
+  .actions.tri{grid-template-columns:1fr 1fr 1fr;}
+  button.act{
+    padding:11px 6px;
+    border:none;border-radius:10px;
+    background:linear-gradient(180deg,var(--accent2),#5aa550);
+    color:#0f2a0c;font-weight:bold;font-size:12.5px;
+    cursor:pointer;
+    box-shadow:0 3px 0 #3f7a37;
+    transition:.1s;
+  }
+  button.act:active{transform:translateY(2px);box-shadow:0 1px 0 #3f7a37;}
+  button.act:disabled{
+    background:#4a4a4a;color:#8a8a8a;box-shadow:0 3px 0 #2c2c2c;cursor:not-allowed;
+  }
+  button.act.blue{background:linear-gradient(180deg,#5aa0e6,#3672b8);color:#eef6ff;box-shadow:0 3px 0 #244d80;}
+  button.act.pink{background:linear-gradient(180deg,#e6789f,#c94d78);color:#fff0f5;box-shadow:0 3px 0 #8f2f52;}
+  button.act.gold{background:linear-gradient(180deg,var(--accent),#c98f22);color:#3a2400;box-shadow:0 3px 0 #8a6316;}
+  button.small{padding:6px 8px;font-size:11px;border-radius:8px;}
+  .btn-icon{width:15px;height:15px;object-fit:contain;vertical-align:-3px;margin-right:2px;}
+  .cooldown{font-size:9.5px;opacity:.85;display:block;margin-top:2px;}
+  .warn{
+    background:rgba(217,83,79,0.25);
+    border:1px solid rgba(217,83,79,0.6);
+    border-radius:8px;padding:6px 8px;font-size:11.5px;margin-top:8px;color:#ffd6d4;
+  }
+  .egg-choice{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
+  }
+  .egg-card{
+    background:rgba(255,255,255,0.06);
+    border-radius:12px;padding:10px;text-align:center;
+    cursor:pointer;border:2px solid transparent;
+    transition:.15s;
+  }
+  .egg-card:hover{border-color:var(--accent2);}
+  .egg-card img{width:70px;height:70px;object-fit:contain;}
+  .egg-card .fam-name{font-weight:bold;font-size:13px;margin-top:4px;}
+  .badge{
+    display:inline-block;padding:2px 8px;border-radius:20px;
+    font-size:10px;font-weight:bold;margin-left:4px;
+  }
+  .badge.common{background:#7a7a7a;color:#fff;}
+  .badge.uncommon{background:#4a8f52;color:#fff;}
+  .badge.rare{background:#3f6fd1;color:#fff;}
+  .badge.superrare{background:linear-gradient(90deg,#e6789f,#e8b23d,#5aa0e6);color:#fff;}
+  .dex-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .dex-card{
+    background:rgba(255,255,255,0.06);border-radius:10px;padding:8px;text-align:center;
+    opacity:.35;
+  }
+  .dex-card.found{opacity:1;}
+  .dex-card img{width:56px;height:56px;object-fit:contain;}
+  .dex-card .dname{font-size:11px;font-weight:bold;margin-top:2px;}
+  .dex-card .ddesc{font-size:9.5px;color:var(--sub);margin-top:2px;height:28px;overflow:hidden;}
+  .battle-vs{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .battle-side{flex:1;text-align:center;}
+  .battle-side img{width:80px;height:80px;object-fit:contain;}
+  .vs-text{font-size:18px;font-weight:bold;color:var(--accent);}
+  #battleLog{
+    background:rgba(0,0,0,0.35);border-radius:10px;padding:8px;
+    height:120px;overflow-y:auto;font-size:11.5px;margin-top:10px;
+    display:flex;flex-direction:column-reverse;
+  }
+  #battleLog div{padding:2px 0;border-bottom:1px dashed rgba(255,255,255,0.08);}
+  .diff-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .diff-item{
+    display:flex;justify-content:space-between;align-items:center;
+    background:rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;
+  }
+  .diff-item .dname{font-weight:bold;font-size:13px;}
+  .diff-item .dreward{font-size:11px;color:var(--accent);}
+  .history-item{
+    display:flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.05);border-radius:10px;padding:6px 8px;margin-bottom:6px;
+  }
+  .history-item img{width:34px;height:34px;object-fit:contain;flex-shrink:0;}
+  .history-item .hname{font-size:12px;font-weight:bold;}
+  .history-item .hstat{font-size:10px;color:var(--sub);}
+  footer{margin-top:10px;text-align:center;}
+  footer button{
+    background:rgba(217,83,79,0.15);
+    border:1px solid rgba(217,83,79,0.45);
+    color:#ffb3b0;font-size:12px;font-weight:bold;
+    padding:9px 16px;border-radius:10px;cursor:pointer;
+  }
+  .confirm-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;}
+  button.act.danger{background:linear-gradient(180deg,#e0605a,#b83a34);color:#fff;box-shadow:0 3px 0 #7a231f;}
+  #modalOverlay{
+    position:absolute;inset:0;background:rgba(0,0,0,0.7);
+    display:flex;align-items:center;justify-content:center;
+    border-radius:18px;z-index:50;
+  }
+  #modalBox{
+    background:linear-gradient(180deg,var(--panel-light),var(--panel));
+    border-radius:14px;padding:18px;width:85%;text-align:center;
+    box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  }
+  #modalBox img{width:110px;height:110px;object-fit:contain;margin:0 auto;display:block;}
+  #modalBox svg{width:110px;height:110px;margin:0 auto;display:block;}
+  #modalBox h2{font-size:16px;}
+  #modalBox button{
+    margin-top:12px;padding:10px 20px;border:none;border-radius:10px;
+    background:var(--accent2);color:#173a13;font-weight:bold;cursor:pointer;
+  }
+  input.nameInput{
+    width:100%;padding:8px;border-radius:8px;border:none;
+    font-size:13px;text-align:center;margin-top:8px;background:#fff;color:#222;
+  }
+</style>
+</head>
+<body>
+<div id="phone">
+  <div id="screen">
+    <header>
+      <div class="title">🌳 虫ペット</div>
+      <div class="currency"><img src="images/donguri.png" alt="どんぐり"> <span id="currencyVal">0</span></div>
+    </header>
+    <nav id="tabs">
+      <button data-tab="raise" class="active">育成</button>
+      <button data-tab="battle">対戦</button>
+      <button data-tab="dex">図鑑</button>
+    </nav>
+
+    <div id="tab-raise"></div>
+    <div id="tab-battle" class="hidden"></div>
+    <div id="tab-dex" class="hidden"></div>
+
+    <footer>
+      <button id="resetBtn">セーブデータをリセット</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ CONFIG ============ */
+
+const SPECIES = {
+  kabuto: [
+    {id:'kabuto_cha',  name:'カブトムシ',           tier:'common',    img:'images/kabuto_uncommon.png',  base:{power:40,speed:30,technique:25,vitality:90},  desc:'夏に大人気の定番カブトムシ。艶やかな体を持つ。'},
+    {id:'kabuto_kuro', name:'ゴホンヅノカブト',     tier:'uncommon',  img:'images/kabuto_rare.png',       base:{power:60,speed:35,technique:30,vitality:110}, desc:'5本の角を持つ珍しいカブトムシ。'},
+    {id:'gohonduno',   name:'コーカサスオオカブト', tier:'rare',      img:'images/kabuto_caucasus.png',   base:{power:75,speed:45,technique:38,vitality:105}, desc:'3本の長い角を持つ、世界最大級のカブトムシの一種。'},
+    {id:'hercules',    name:'ヘラクレスオオカブト', tier:'superrare', img:'images/kabuto_superrare.png',  base:{power:95,speed:42,technique:50,vitality:140}, desc:'世界最大級、伝説のカブトムシ。'}
+  ],
+  kuwa: [
+    {id:'kuwa_normal', name:'ノコギリクワガタ',     tier:'common',    img:'images/kuwa_common.png',       base:{power:35,speed:45,technique:30,vitality:80},  desc:'大きく湾曲した顎が特徴のクワガタ。'},
+    {id:'primosi',     name:'オオクワガタ',         tier:'uncommon',  img:'images/kuwa_ohkuwa.png',       base:{power:50,speed:55,technique:35,vitality:90},  desc:'クワガタの王様と呼ばれる憧れの存在。'},
+    {id:'nijiiro',     name:'ニジイロクワガタ',     tier:'rare',      img:'images/kuwa_superrare.png',    base:{power:58,speed:52,technique:58,vitality:100}, desc:'虹色に輝く美しい体を持つ幻のクワガタ。'},
+    {id:'ougononi',    name:'オウゴンオニクワガタ', tier:'superrare', img:'images/kuwa_rare.png',         base:{power:62,speed:68,technique:62,vitality:95},  desc:'金色に輝く体を持つ珍しい鬼クワガタ。'}
+  ]
+};
+const TIER_LABEL = {common:'ノーマル',uncommon:'アンコモン',rare:'レア',superrare:'超レア'};
+// Tier is decided by care QUALITY (time-weighted average of hunger/stamina/mood
+// while raising the larva), not by total growth spent -- growth is fixed at ~450
+// no matter what, so a growth-based cutoff could never actually reach the lower
+// tiers. Quality is naturally bounded 0-100, so all four tiers stay reachable.
+const TIERS = [
+  {name:'superrare', min:85},
+  {name:'rare', min:65},
+  {name:'uncommon', min:45},
+  {name:'common', min:0}
+];
+
+const FAMILY_LABEL = {kabuto:'カブトムシ系', kuwa:'クワガタ系'};
+
+const IMG = {
+  larva: 'images/larva.png',
+  food: 'images/food.png',
+  bandage: 'images/bandage.png',
+  death: 'images/death_star.png',
+  donguri: 'images/donguri.png'
+};
+
+const STAGE_THRESHOLDS = [100,150,200]; // larva1->2, 2->3, 3->pupa
+const PUPA_DURATION_MS = 60*1000;
+
+const COOLDOWN = { feed:6000, train:10000, pat:4000, rest:15000 };
+const DECAY = { hungerPerSec: 1/60, staminaRegenPerSec: 1/45, moodDecayPerSec: 1/90 };
+
+const MIN_TRAIN_STAMINA = 5;
+const INJURY_DURATION_MS = 45000;
+const INJURY_MOOD_PENALTY = 25;
+const INJURY_STAT_PENALTY = 3;
+
+function injuryChance(stamina){
+  // 0% at stamina 60+, ramps up to 45% as stamina approaches 0
+  return clamp((60-stamina)/60, 0, 1) * 0.45;
+}
+function deathChance(stamina){
+  // only possible once stamina is critically low (<=15), and even then stays rare (max ~4%)
+  if(stamina > 15) return 0;
+  return clamp((15-stamina)/15, 0, 1) * 0.04;
+}
+
+const CURRENCY_REGEN_MS = 45000; // +1 どんぐり per interval
+const CURRENCY_REGEN_OFFLINE_CAP_MS = 6*60*60*1000; // cap offline catch-up at 6 hours worth
+const MAX_CURRENCY = 300;
+
+const DIFFICULTIES = [
+  {id:'easy',   name:'初級',  mult:0.75, reward:20},
+  {id:'normal', name:'中級',  mult:1.0,  reward:40},
+  {id:'hard',   name:'上級',  mult:1.25, reward:70},
+  {id:'legend', name:'伝説',  mult:1.55, reward:130, requireWins:5}
+];
+
+const RIVAL_ADJ = ['野生の','森の','山奥の','伝説の','放浪の','古参の','闘志溢れる','静かなる'];
+
+const SAVE_KEY = 'mushiPetSave_v2';
+
+/* ============ STATE ============ */
+
+function defaultState(){
+  return {
+    currency: 0,
+    eggsHatched: 0,
+    wins: 0,
+    losses: 0,
+    pet: null,
+    history: [],
+    graveyard: [],
+    dex: {},
+    lastUpdate: Date.now(),
+    lastCurrencyTime: Date.now()
+  };
+}
+let state = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return defaultState();
+    const s = JSON.parse(raw);
+    return Object.assign(defaultState(), s);
+  }catch(e){ return defaultState(); }
+}
+function save(){
+  state.lastUpdate = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function findSpecies(id){
+  for(const fam of ['kabuto','kuwa']){
+    const f = SPECIES[fam].find(s=>s.id===id);
+    if(f) return f;
+  }
+  return null;
+}
+
+/* ============ ART HELPERS (irasutoya illustrations) ============ */
+
+function imgTag(src, alt){
+  return `<img src="${src}" alt="${escapeHtml(alt||'')}">`;
+}
+
+function eggSVG(){
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="58" rx="24" ry="30" fill="#f7ecd2" stroke="#c9a86a" stroke-width="2"/>
+    <ellipse cx="41" cy="42" rx="7" ry="10" fill="#ffffff" opacity="0.55"/>
+  </svg>`;
+}
+
+function pupaSVG(){
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="55" rx="20" ry="32" fill="#caa876" stroke="#9c7a4a" stroke-width="2"/>
+    <path d="M35,35 q15,-10 30,0" fill="none" stroke="#9c7a4a" stroke-width="2" opacity="0.6"/>
+    <path d="M32,50 q18,-8 36,0" fill="none" stroke="#9c7a4a" stroke-width="2" opacity="0.5"/>
+    <path d="M34,65 q16,-8 32,0" fill="none" stroke="#9c7a4a" stroke-width="2" opacity="0.5"/>
+    <path d="M44,22 q6,-10 12,0" fill="none" stroke="#7a5c34" stroke-width="3" opacity="0.7"/>
+  </svg>`;
+}
+
+function bugImageForPet(pet){
+  if(pet.stage==='egg') return eggSVG();
+  if(pet.stage==='larva') return imgTag(IMG.larva,'幼虫');
+  if(pet.stage==='pupa') return pupaSVG();
+  const sp = findSpecies(pet.speciesId);
+  return imgTag(sp.img, sp.name);
+}
+
+function bugImageForSpecies(sp){
+  return imgTag(sp.img, sp.name);
+}
+
+function eggChoiceImage(family){
+  const sp = SPECIES[family].find(s=>s.tier==='common');
+  return imgTag(sp.img, sp.name);
+}
+
+function bugStageMarkup(pet){
+  const injured = pet.stage==='larva' && pet.injured && Date.now() < pet.injuredUntil;
+  return `<div class="bug-stage">${bugImageForPet(pet)}${injured ? `<img class="injury-badge" src="${IMG.bandage}" alt="けが">` : ''}</div>`;
+}
+
+/* ============ TIME / DECAY LOGIC ============ */
+
+function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+
+function applyElapsed(pet, ms){
+  const sec = ms/1000;
+  if(sec<=0) return;
+  pet.hunger = clamp(pet.hunger - DECAY.hungerPerSec*sec, 0, 100);
+  pet.stamina = clamp(pet.stamina + DECAY.staminaRegenPerSec*sec, 0, 100);
+  // going hungry sours the mood much faster than normal
+  const moodRate = pet.hunger < 30 ? DECAY.moodDecayPerSec * 4 : DECAY.moodDecayPerSec;
+  pet.mood = clamp(pet.mood - moodRate*sec, 0, 100);
+
+  // time-weighted average of hunger/stamina/mood -- this is what decides the
+  // adult's rarity tier, so consistently good care (not just total effort) pays off
+  const quality = (pet.hunger + pet.stamina + pet.mood) / 3;
+  pet.careSum = (pet.careSum||0) + quality*sec;
+  pet.careTime = (pet.careTime||0) + sec;
+}
+
+function careQuality(pet){
+  if(!pet.careTime) return (pet.hunger+pet.stamina+pet.mood)/3;
+  return pet.careSum / pet.careTime;
+}
+
+function tierForQuality(quality){
+  for(const t of TIERS){ if(quality >= t.min) return t.name; }
+  return 'common';
+}
+
+function applyInjuryQualityPenalty(pet){
+  // getting hurt is a real, lasting mark on the care record: mix in a large
+  // zero-quality block (weighted at 70% of time raised so far) so the running
+  // average drops by roughly 40%, regardless of how far along the pet is
+  const weight = Math.max(30, (pet.careTime||0) * 0.7);
+  pet.careTime = (pet.careTime||0) + weight;
+}
+
+function updateInjuryStatus(pet){
+  if(pet && pet.injured && Date.now() >= pet.injuredUntil){
+    pet.injured = false;
+  }
+}
+
+function regenCurrency(){
+  const now = Date.now();
+  if(!state.lastCurrencyTime) state.lastCurrencyTime = now;
+  let elapsed = now - state.lastCurrencyTime;
+  if(elapsed > CURRENCY_REGEN_OFFLINE_CAP_MS){
+    state.lastCurrencyTime = now - CURRENCY_REGEN_OFFLINE_CAP_MS;
+    elapsed = CURRENCY_REGEN_OFFLINE_CAP_MS;
+  }
+  const intervals = Math.floor(elapsed / CURRENCY_REGEN_MS);
+  if(intervals > 0){
+    state.currency = clamp(state.currency + intervals, 0, MAX_CURRENCY);
+    state.lastCurrencyTime += intervals * CURRENCY_REGEN_MS;
+  }
+}
+
+function catchUpOffline(){
+  regenCurrency();
+  if(!state.pet) return;
+  const now = Date.now();
+  const elapsed = now - state.lastUpdate;
+  const pet = state.pet;
+  updateInjuryStatus(pet);
+  if(pet.stage==='pupa'){
+    const remain = pet.pupaEndAt - state.lastUpdate;
+    if(elapsed >= remain){
+      finishPupa();
+    }
+  } else if(pet.stage==='larva' || pet.stage==='egg'){
+    applyElapsed(pet, Math.min(elapsed, 1000*60*60*24*3)); // cap 3 days worth
+  }
+}
+
+/* ============ CORE ACTIONS ============ */
+
+function newEggCost(){
+  if(state.eggsHatched===0) return 0;
+  return 100;
+}
+
+function hatchEgg(family){
+  const cost = newEggCost();
+  if(state.currency < cost){
+    alert(`どんぐりが足りません。（必要: ${cost} / 所持: ${state.currency}）`);
+    return;
+  }
+  state.currency -= cost;
+  state.eggsHatched += 1;
+  state.pet = {
+    family: family,
+    name: family==='kabuto' ? 'カブトくん' : 'クワガタくん',
+    stage: 'larva',
+    larvaLevel: 1,
+    growth: 0,
+    hunger: 80,
+    stamina: 80,
+    mood: 80,
+    injured: false,
+    injuredUntil: 0,
+    careSum: 0,
+    careTime: 0,
+    trained: {power:0, speed:0, technique:0},
+    stageStart: Date.now(),
+    pupaEndAt: null,
+    speciesId: null,
+    cooldowns: {feed:0, train:0, pat:0, rest:0},
+    hpNow: null
+  };
+  save();
+  renderAll();
+}
+
+function effMultiplier(pet){
+  if(pet.hunger<20 || pet.stamina<10 || pet.mood<30) return 0.5;
+  return 1.0;
+}
+
+function doFeed(){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='larva') return;
+  const now = Date.now();
+  if(now < pet.cooldowns.feed) return;
+  const eff = effMultiplier(pet);
+  pet.hunger = clamp(pet.hunger + 25, 0, 100);
+  pet.mood = clamp(pet.mood + 5, 0, 100);
+  const gain = 10*eff;
+  pet.growth += gain;
+  const statBump = Math.round(2*eff);
+  const statKeys = ['power','speed','technique'];
+  const k = statKeys[Math.floor(Math.random()*3)];
+  pet.trained[k] += statBump;
+  pet.cooldowns.feed = now + COOLDOWN.feed;
+  checkEvolution();
+  save(); renderAll();
+}
+
+function doTrain(stat){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='larva') return;
+  const now = Date.now();
+  if(now < pet.cooldowns.train) return;
+  updateInjuryStatus(pet);
+  if(pet.injured) return;
+  if(pet.stamina < MIN_TRAIN_STAMINA) return;
+
+  pet.cooldowns.train = now + COOLDOWN.train;
+  const staminaBefore = pet.stamina;
+
+  // training on fumes can, very rarely, be fatal
+  if(staminaBefore <= 15 && Math.random() < deathChance(staminaBefore)){
+    pet.stamina = clamp(pet.stamina - 15, 0, 100);
+    save();
+    dieOfOverwork();
+    return;
+  }
+
+  const eff = effMultiplier(pet);
+  const gotInjured = Math.random() < injuryChance(staminaBefore);
+  pet.stamina = clamp(pet.stamina - 15, 0, 100);
+  pet.hunger = clamp(pet.hunger - 5, 0, 100);
+
+  if(gotInjured){
+    pet.injured = true;
+    pet.injuredUntil = now + INJURY_DURATION_MS;
+    pet.mood = clamp(pet.mood - INJURY_MOOD_PENALTY, 0, 100);
+    pet.trained.power = Math.max(0, pet.trained.power - INJURY_STAT_PENALTY);
+    pet.trained.speed = Math.max(0, pet.trained.speed - INJURY_STAT_PENALTY);
+    pet.trained.technique = Math.max(0, pet.trained.technique - INJURY_STAT_PENALTY);
+    applyInjuryQualityPenalty(pet);
+    save();
+    showEvoModal(`スタミナが少ない状態で無理に鍛えたら…<br><b>けがをしてしまった！</b><br>力・速さ・技が少し下がり、お世話の質も大きく落ちてしまった…<br>${Math.round(INJURY_DURATION_MS/1000)}秒ほどトレーニングを休むことに…`, imgTag(IMG.bandage,'けが'));
+    return;
+  }
+
+  pet.mood = clamp(pet.mood + 3, 0, 100);
+  const gain = 18*eff;
+  pet.growth += gain;
+  pet.trained[stat] += Math.round(7*eff);
+  checkEvolution();
+  save(); renderAll();
+}
+
+function doPat(){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='larva') return;
+  const now = Date.now();
+  if(now < pet.cooldowns.pat) return;
+  const eff = effMultiplier(pet);
+  pet.mood = clamp(pet.mood + 12, 0, 100);
+  const gain = 6*eff;
+  pet.growth += gain;
+  pet.cooldowns.pat = now + COOLDOWN.pat;
+  checkEvolution();
+  save(); renderAll();
+}
+
+function doRest(){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='larva') return;
+  const now = Date.now();
+  if(now < pet.cooldowns.rest) return;
+  pet.stamina = clamp(pet.stamina + 30, 0, 100);
+  pet.cooldowns.rest = now + COOLDOWN.rest;
+  save(); renderAll();
+}
+
+function checkEvolution(){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='larva') return;
+  const threshold = STAGE_THRESHOLDS[pet.larvaLevel-1];
+  if(pet.growth >= threshold){
+    if(pet.larvaLevel < 3){
+      pet.larvaLevel += 1;
+      pet.growth = 0;
+      pet.stageStart = Date.now();
+      showEvoModal(`幼虫が育って<br><b>${pet.larvaLevel}齢幼虫</b>になった！`, imgTag(IMG.larva,'幼虫'));
+    } else {
+      pet.stage = 'pupa';
+      pet.pupaEndAt = Date.now() + PUPA_DURATION_MS;
+      showEvoModal(`さなぎになった…<br>しばらく静かに見守ろう。`, pupaSVG());
+    }
+  }
+}
+
+function finishPupa(){
+  const pet = state.pet;
+  if(!pet || pet.stage!=='pupa') return;
+  const tier = tierForQuality(careQuality(pet));
+  const list = SPECIES[pet.family];
+  const sp = list.find(s=>s.tier===tier) || list[0];
+  pet.speciesId = sp.id;
+  pet.stage = 'adult';
+  pet.stageStart = Date.now();
+  pet.hpMax = sp.base.vitality + Math.round(pet.trained.power*0.15);
+  pet.hpNow = pet.hpMax;
+  state.dex[sp.id] = true;
+  save();
+  showEvoModal(`せいちゅうになった！<br><b>${sp.name}</b> が誕生！<span class="badge ${sp.tier}">${TIER_LABEL[sp.tier]}</span>`, imgTag(sp.img, sp.name));
+}
+
+function finalStats(pet){
+  const sp = findSpecies(pet.speciesId);
+  return {
+    power: sp.base.power + Math.min(30, Math.round(pet.trained.power*0.3)),
+    speed: sp.base.speed + Math.min(30, Math.round(pet.trained.speed*0.3)),
+    technique: sp.base.technique + Math.min(30, Math.round(pet.trained.technique*0.3)),
+    vitality: pet.hpMax
+  };
+}
+
+function retireAndNewEgg(){
+  const pet = state.pet;
+  if(pet && pet.stage==='adult'){
+    const sp = findSpecies(pet.speciesId);
+    state.history.unshift({
+      speciesId: pet.speciesId, family: pet.family, name: pet.name,
+      stats: finalStats(pet), date: Date.now()
+    });
+  }
+  state.pet = null;
+  save();
+  renderAll();
+}
+
+function dieOfOverwork(){
+  const pet = state.pet;
+  if(!pet) return;
+  state.graveyard.unshift({
+    name: pet.name,
+    family: pet.family,
+    stageLabel: `${pet.larvaLevel}齢幼虫`,
+    date: Date.now()
+  });
+  state.pet = null;
+  save();
+  showEvoModal(`${escapeHtml(pet.name)}は疲れがたまりすぎて…<br><b>星になってしまった。</b><br>安らかに、いつまでも輝きますように。`, imgTag(IMG.death,'星になった'));
+}
+
+/* ============ MODAL ============ */
+
+function showEvoModal(html, img){
+  document.querySelectorAll('#modalOverlay').forEach(o=>o.remove());
+  const screen = document.getElementById('screen');
+  const overlay = document.createElement('div');
+  overlay.id = 'modalOverlay';
+  overlay.innerHTML = `<div id="modalBox">${img}<h2>${html}</h2><button class="modalOk">とじる</button></div>`;
+  screen.appendChild(overlay);
+  overlay.querySelector('.modalOk').onclick = ()=>{ overlay.remove(); renderAll(); };
+}
+
+function showConfirmModal(html, yesLabel, onYes, danger){
+  document.querySelectorAll('#modalOverlay').forEach(o=>o.remove());
+  const screen = document.getElementById('screen');
+  const overlay = document.createElement('div');
+  overlay.id = 'modalOverlay';
+  overlay.innerHTML = `<div id="modalBox"><h2>${html}</h2>
+    <div class="confirm-actions">
+      <button class="act small ${danger?'danger':''}" id="confirmYes">${escapeHtml(yesLabel)}</button>
+      <button class="act small gold" id="confirmNo">キャンセル</button>
+    </div>
+  </div>`;
+  screen.appendChild(overlay);
+  overlay.querySelector('#confirmYes').onclick = ()=>{ overlay.remove(); onYes(); };
+  overlay.querySelector('#confirmNo').onclick = ()=>{ overlay.remove(); };
+}
+
+/* ============ RENDER: RAISE TAB ============ */
+
+function renderRaise(){
+  const el = document.getElementById('tab-raise');
+  const pet = state.pet;
+
+  if(!pet){
+    const cost = newEggCost();
+    el.innerHTML = `
+      <div class="panel center">
+        <h2>${state.eggsHatched===0 ? '最初のタマゴを選ぼう' : '新しいタマゴを迎える'}</h2>
+        <p>${cost===0 ? 'はじめての1匹は無料でもらえます。' : `費用: <img src="${IMG.donguri}" style="width:14px;height:14px;vertical-align:-2px;"> ${cost}`}</p>
+        <div class="egg-choice">
+          <div class="egg-card" id="chooseKabuto">
+            ${eggChoiceImage('kabuto')}
+            <div class="fam-name">🦏 カブトムシ系</div>
+            <p>パワー重視。戦いで頼れる一撃を。</p>
+          </div>
+          <div class="egg-card" id="chooseKuwa">
+            ${eggChoiceImage('kuwa')}
+            <div class="fam-name">🪲 クワガタ系</div>
+            <p>スピード・技重視。俊敏に立ち回る。</p>
+          </div>
+        </div>
+      </div>
+      ${renderHistoryPanel()}${renderGraveyardPanel()}
+    `;
+    document.getElementById('chooseKabuto').onclick = ()=>hatchEgg('kabuto');
+    document.getElementById('chooseKuwa').onclick = ()=>hatchEgg('kuwa');
+    return;
+  }
+
+  if(pet.stage==='larva'){
+    updateInjuryStatus(pet);
+    const threshold = STAGE_THRESHOLDS[pet.larvaLevel-1];
+    const now = Date.now();
+    const cdText = (key)=>{
+      const remain = pet.cooldowns[key]-now;
+      return remain>0 ? `(${Math.ceil(remain/1000)}s)` : '';
+    };
+    const isInjured = pet.injured && now < pet.injuredUntil;
+    const canFeed = now>=pet.cooldowns.feed;
+    const canTrain = now>=pet.cooldowns.train && pet.stamina>=MIN_TRAIN_STAMINA && !isInjured;
+    const canPat = now>=pet.cooldowns.pat;
+    const canRest = now>=pet.cooldowns.rest;
+
+    const warnings = [];
+    if(pet.hunger<20) warnings.push('⚠ おなかがすいています。放っておくときげんも悪くなります。えさやりをしてあげましょう。');
+    if(pet.mood<30) warnings.push('⚠ きげんが悪いです。お世話の効率が下がっています。なでたりえさをあげたりしてご機嫌を取りましょう。');
+    if(isInjured) warnings.push(`🩹 けがをしています（あと${Math.ceil((pet.injuredUntil-now)/1000)}秒）。回復するまでトレーニングはできません。`);
+    else if(pet.stamina<40) warnings.push('⚠ スタミナが少ないです。無理にトレーニングすると、けがをするかもしれません…（低いほど危険です）');
+    const warnHtml = warnings.map(w=>`<div class="warn">${w}</div>`).join('');
+    const currentTier = tierForQuality(careQuality(pet));
+
+    el.innerHTML = `
+      <div class="panel center">
+        ${bugStageMarkup(pet)}
+        <div class="pet-name">${escapeHtml(pet.name)}</div>
+        <div class="pet-sub">${FAMILY_LABEL[pet.family]} ・ ${pet.larvaLevel}齢幼虫</div>
+
+        <div class="meter-row">
+          <div class="meter-label"><span>成長 (${Math.floor(pet.growth)}/${threshold})</span></div>
+          <div class="meter-bg"><div class="meter-fill fill-growth" style="width:${clamp(pet.growth/threshold*100,0,100)}%"></div></div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-label"><span>満腹度</span><span>${Math.round(pet.hunger)}</span></div>
+          <div class="meter-bg"><div class="meter-fill fill-hunger" style="width:${pet.hunger}%"></div></div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-label"><span>スタミナ</span><span>${Math.round(pet.stamina)}</span></div>
+          <div class="meter-bg"><div class="meter-fill fill-stamina" style="width:${pet.stamina}%"></div></div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-label"><span>きげん</span><span>${Math.round(pet.mood)}</span></div>
+          <div class="meter-bg"><div class="meter-fill fill-mood" style="width:${pet.mood}%"></div></div>
+        </div>
+        ${warnHtml}
+        <div class="actions">
+          <button class="act" id="btnFeed" ${canFeed?'':'disabled'}><img class="btn-icon" src="${IMG.food}" alt=""> えさやり<span class="cooldown">${cdText('feed')}</span></button>
+          <button class="act pink" id="btnPat" ${canPat?'':'disabled'}>✋ なでる<span class="cooldown">${cdText('pat')}</span></button>
+          <button class="act blue" id="btnTrainPower" ${canTrain?'':'disabled'}>💪 力トレ<span class="cooldown">${cdText('train')}</span></button>
+          <button class="act blue" id="btnTrainSpeed" ${canTrain?'':'disabled'}>⚡ 速さトレ<span class="cooldown">${cdText('train')}</span></button>
+          <button class="act blue" id="btnTrainTech" ${canTrain?'':'disabled'}>🎯 技トレ<span class="cooldown">${cdText('train')}</span></button>
+          <button class="act gold" id="btnRest" ${canRest?'':'disabled'}>💤 休憩<span class="cooldown">${cdText('rest')}</span></button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-chip">💪 力 <b>${pet.trained.power}</b></div>
+          <div class="stat-chip">⚡ 速さ <b>${pet.trained.speed}</b></div>
+          <div class="stat-chip">🎯 技 <b>${pet.trained.technique}</b></div>
+          <div class="stat-chip">❤ お世話の質 <b>${Math.round(careQuality(pet))}<span class="badge ${currentTier}">${TIER_LABEL[currentTier]}</span></b></div>
+        </div>
+        <p style="text-align:center;margin-top:2px;">満腹度・スタミナ・きげんを高く保つほど、生まれる成虫のレア度が上がります。</p>
+      </div>
+    `;
+    document.getElementById('btnFeed').onclick = doFeed;
+    document.getElementById('btnPat').onclick = doPat;
+    document.getElementById('btnTrainPower').onclick = ()=>doTrain('power');
+    document.getElementById('btnTrainSpeed').onclick = ()=>doTrain('speed');
+    document.getElementById('btnTrainTech').onclick = ()=>doTrain('technique');
+    document.getElementById('btnRest').onclick = doRest;
+    return;
+  }
+
+  if(pet.stage==='pupa'){
+    const remain = Math.max(0, pet.pupaEndAt - Date.now());
+    el.innerHTML = `
+      <div class="panel center">
+        ${bugStageMarkup(pet)}
+        <div class="pet-name">${escapeHtml(pet.name)}</div>
+        <div class="pet-sub">さなぎ中…</div>
+        <p>あと ${Math.ceil(remain/1000)} 秒で羽化します。そっと見守りましょう。</p>
+      </div>
+    `;
+    return;
+  }
+
+  if(pet.stage==='adult'){
+    const sp = findSpecies(pet.speciesId);
+    const stats = finalStats(pet);
+    el.innerHTML = `
+      <div class="panel center">
+        ${bugStageMarkup(pet)}
+        <div class="pet-name">${escapeHtml(pet.name)} <span class="badge ${sp.tier}">${TIER_LABEL[sp.tier]}</span></div>
+        <div class="pet-sub">${sp.name} ・ ${FAMILY_LABEL[pet.family]}</div>
+        <p>${sp.desc}</p>
+        <div class="stat-grid">
+          <div class="stat-chip">💪 力 <b>${stats.power}</b></div>
+          <div class="stat-chip">⚡ 速さ <b>${stats.speed}</b></div>
+          <div class="stat-chip">🎯 技 <b>${stats.technique}</b></div>
+          <div class="stat-chip">❤ 体力 <b>${stats.vitality}</b></div>
+        </div>
+        <input class="nameInput" id="renameInput" maxlength="10" value="${escapeHtml(pet.name)}" placeholder="なまえを入力">
+        <div class="actions">
+          <button class="act small" id="btnRename">名前を変更</button>
+          <button class="act gold small" id="btnRetire">卒業させて新しいタマゴへ</button>
+        </div>
+      </div>
+      ${renderHistoryPanel()}${renderGraveyardPanel()}
+    `;
+    document.getElementById('btnRename').onclick = ()=>{
+      const v = document.getElementById('renameInput').value.trim();
+      if(v){ pet.name = v; save(); renderAll(); }
+    };
+    document.getElementById('btnRetire').onclick = ()=>{
+      showConfirmModal(`${escapeHtml(pet.name)} を卒業させて図鑑に記録し、<br>新しいタマゴを迎えますか？`, '卒業させる', ()=>{
+        retireAndNewEgg();
+      }, false);
+    };
+    return;
+  }
+}
+
+function renderHistoryPanel(){
+  if(!state.history.length) return '';
+  const items = state.history.slice(0,5).map(h=>{
+    const sp = findSpecies(h.speciesId);
+    return `<div class="history-item">
+      ${bugImageForSpecies(sp)}
+      <div>
+        <div class="hname">${escapeHtml(h.name)} — ${sp.name} <span class="badge ${sp.tier}">${TIER_LABEL[sp.tier]}</span></div>
+        <div class="hstat">力${h.stats.power} / 速${h.stats.speed} / 技${h.stats.technique} / 体${h.stats.vitality}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="panel"><h3>卒業した虫たち</h3>${items}</div>`;
+}
+
+function renderGraveyardPanel(){
+  if(!state.graveyard || !state.graveyard.length) return '';
+  const items = state.graveyard.slice(0,5).map(g=>{
+    const d = new Date(g.date);
+    const dateLabel = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    return `<div class="history-item">
+      ${imgTag(IMG.death,'星')}
+      <div>
+        <div class="hname">${escapeHtml(g.name)}（${FAMILY_LABEL[g.family]}・${escapeHtml(g.stageLabel)}）</div>
+        <div class="hstat">${dateLabel} に星になりました…</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="panel"><h3>🌟 天国の思い出</h3>${items}</div>`;
+}
+
+/* ============ RENDER: BATTLE TAB ============ */
+
+let battleInProgress = false;
+
+function renderBattle(){
+  const el = document.getElementById('tab-battle');
+  const pet = state.pet;
+  if(!pet || pet.stage!=='adult'){
+    el.innerHTML = `<div class="panel center"><p>成虫に育て上げると対戦できるようになります。</p></div>`;
+    return;
+  }
+  const sp = findSpecies(pet.speciesId);
+  const stats = finalStats(pet);
+
+  const diffHtml = DIFFICULTIES.map(d=>{
+    const locked = d.requireWins && state.wins < d.requireWins;
+    return `<div class="diff-item">
+      <div>
+        <div class="dname">${d.name}${locked?` 🔒(勝利${d.requireWins}回で解放)`:''}</div>
+        <div class="dreward">報酬 <img src="${IMG.donguri}" style="width:12px;height:12px;vertical-align:-1px;"> ${d.reward}</div>
+      </div>
+      <button class="act small" data-diff="${d.id}" ${locked||battleInProgress?'disabled':''}>挑戦</button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="panel center">
+      ${bugStageMarkup(pet)}
+      <div class="pet-name">${escapeHtml(pet.name)}</div>
+      <div class="pet-sub">${sp.name} ・ 力${stats.power} 速${stats.speed} 技${stats.technique} 体${stats.vitality}</div>
+      <p>戦績: ${state.wins}勝 ${state.losses}敗</p>
+      <div class="diff-list">${diffHtml}</div>
+      <div id="battleArena" class="hidden">
+        <div class="battle-vs" style="margin-top:12px;">
+          <div class="battle-side">
+            ${bugImageForPet(pet)}
+            <div class="pet-sub">${escapeHtml(pet.name)}</div>
+            <div class="meter-bg"><div class="meter-fill fill-hp" id="hpMine" style="width:100%"></div></div>
+          </div>
+          <div class="vs-text">VS</div>
+          <div class="battle-side">
+            <div id="oppImg"></div>
+            <div class="pet-sub" id="oppName"></div>
+            <div class="meter-bg"><div class="meter-fill fill-hp" id="hpOpp" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div id="battleLog"></div>
+      </div>
+    </div>
+  `;
+  el.querySelectorAll('[data-diff]').forEach(btn=>{
+    btn.onclick = ()=>startBattle(btn.getAttribute('data-diff'));
+  });
+}
+
+function randRange(a,b){ return a + Math.random()*(b-a); }
+
+function startBattle(diffId){
+  if(battleInProgress) return;
+  const pet = state.pet;
+  const stats = finalStats(pet);
+  const diff = DIFFICULTIES.find(d=>d.id===diffId);
+
+  const allSpecies = [...SPECIES.kabuto, ...SPECIES.kuwa];
+  const oppSpDef = allSpecies[Math.floor(Math.random()*allSpecies.length)];
+  const oppName = RIVAL_ADJ[Math.floor(Math.random()*RIVAL_ADJ.length)] + oppSpDef.name;
+
+  const opp = {
+    name: oppName,
+    power: Math.round(stats.power * diff.mult * randRange(0.85,1.15)),
+    speed: Math.round(stats.speed * diff.mult * randRange(0.85,1.15)),
+    technique: Math.round(stats.technique * diff.mult * randRange(0.85,1.15)),
+    hpMax: Math.round(stats.vitality * diff.mult * randRange(0.9,1.1))
+  };
+  opp.hpNow = opp.hpMax;
+
+  let mine = { power:stats.power, speed:stats.speed, technique:stats.technique, hpMax:stats.vitality, hpNow:stats.vitality };
+
+  battleInProgress = true;
+  renderBattle();
+  const arena = document.getElementById('battleArena');
+  arena.classList.remove('hidden');
+  document.getElementById('oppImg').innerHTML = bugImageForSpecies(oppSpDef);
+  document.getElementById('oppName').textContent = oppName;
+  const logEl = document.getElementById('battleLog');
+  function log(text){
+    const d = document.createElement('div');
+    d.textContent = text;
+    logEl.prepend(d);
+  }
+  log(`${opp.name} が現れた！`);
+
+  const mineFirst = mine.speed >= opp.speed;
+  let turn = mineFirst ? 'mine' : 'opp';
+
+  const interval = setInterval(()=>{
+    if(mine.hpNow<=0 || opp.hpNow<=0){
+      clearInterval(interval);
+      finishBattle(mine.hpNow>0, diff, pet);
+      return;
+    }
+    if(turn==='mine'){
+      const dmg = Math.max(2, Math.round(mine.power - opp.technique*0.4 + randRange(-6,6)));
+      opp.hpNow = clamp(opp.hpNow - dmg, 0, opp.hpMax);
+      log(`${pet.name} の攻撃！ ${dmg} ダメージ！`);
+      turn='opp';
+    } else {
+      const dmg = Math.max(2, Math.round(opp.power - mine.technique*0.4 + randRange(-6,6)));
+      mine.hpNow = clamp(mine.hpNow - dmg, 0, mine.hpMax);
+      log(`${opp.name} の攻撃！ ${dmg} ダメージ！`);
+      turn='mine';
+    }
+    document.getElementById('hpMine').style.width = clamp(mine.hpNow/mine.hpMax*100,0,100)+'%';
+    document.getElementById('hpOpp').style.width = clamp(opp.hpNow/opp.hpMax*100,0,100)+'%';
+    if(mine.hpNow<=0 || opp.hpNow<=0){
+      clearInterval(interval);
+      setTimeout(()=>finishBattle(mine.hpNow>0, diff, pet), 500);
+    }
+  }, 850);
+}
+
+function finishBattle(won, diff, pet){
+  battleInProgress = false;
+  if(won){
+    state.wins += 1;
+    state.currency = clamp(state.currency + diff.reward, 0, MAX_CURRENCY);
+    save();
+    showEvoModal(`${diff.name}のバトルに<b>勝利！</b><br>どんぐり ${diff.reward} を獲得！`, bugImageForPet(pet));
+  } else {
+    state.losses += 1;
+    state.currency = clamp(state.currency + 5, 0, MAX_CURRENCY);
+    save();
+    showEvoModal(`${diff.name}のバトルに<b>敗北…</b><br>どんぐり 5 をもらった。また鍛えよう！`, bugImageForPet(pet));
+  }
+}
+
+/* ============ RENDER: DEX TAB ============ */
+
+function renderDex(){
+  const el = document.getElementById('tab-dex');
+  const cards = [];
+  for(const fam of ['kabuto','kuwa']){
+    for(const sp of SPECIES[fam]){
+      const found = !!state.dex[sp.id];
+      cards.push(`<div class="dex-card ${found?'found':''}">
+        ${found ? bugImageForSpecies(sp) : eggSVG()}
+        <div class="dname">${found ? sp.name : '？？？'} <span class="badge ${sp.tier}">${TIER_LABEL[sp.tier]}</span></div>
+        <div class="ddesc">${found ? sp.desc : 'まだ発見していません'}</div>
+      </div>`);
+    }
+  }
+  const total = SPECIES.kabuto.length + SPECIES.kuwa.length;
+  const foundCount = Object.keys(state.dex).length;
+  el.innerHTML = `
+    <div class="panel">
+      <h2>図鑑 (${foundCount}/${total})</h2>
+      <div class="dex-grid">${cards.join('')}</div>
+    </div>
+    ${renderHistoryPanel()}${renderGraveyardPanel()}
+  `;
+}
+
+/* ============ TABS / MAIN RENDER ============ */
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll(){
+  document.getElementById('currencyVal').textContent = `${state.currency}/${MAX_CURRENCY}`;
+  renderRaise();
+  if(!battleInProgress) renderBattle();
+  renderDex();
+}
+
+function setupTabs(){
+  const buttons = document.querySelectorAll('#tabs button');
+  buttons.forEach(btn=>{
+    btn.onclick = ()=>{
+      buttons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-raise').classList.toggle('hidden', btn.dataset.tab!=='raise');
+      document.getElementById('tab-battle').classList.toggle('hidden', btn.dataset.tab!=='battle');
+      document.getElementById('tab-dex').classList.toggle('hidden', btn.dataset.tab!=='dex');
+    };
+  });
+}
+
+document.getElementById('resetBtn').onclick = ()=>{
+  showConfirmModal('本当にすべてのセーブデータを削除しますか？<br>この操作は取り消せません。', '削除する', ()=>{
+    localStorage.removeItem(SAVE_KEY);
+    state = defaultState();
+    renderAll();
+  }, true);
+};
+
+/* ============ TICK LOOP ============ */
+
+setInterval(()=>{
+  regenCurrency();
+  const pet = state.pet;
+  if(pet){
+    updateInjuryStatus(pet);
+    if(pet.stage==='larva'){
+      applyElapsed(pet, 1000);
+      checkEvolution();
+    } else if(pet.stage==='pupa'){
+      if(Date.now() >= pet.pupaEndAt){
+        finishPupa();
+      }
+    }
+  }
+  save();
+  if(!battleInProgress) renderAll();
+}, 1000);
+
+/* ============ INIT ============ */
+
+catchUpOffline();
+setupTabs();
+renderAll();
+
+})();
+</script>
+</body>
+</html>
