@@ -249,6 +249,12 @@
   #modalBox img{width:110px;height:110px;object-fit:contain;margin:0 auto;display:block;}
   #modalBox svg{width:110px;height:110px;margin:0 auto;display:block;}
   #modalBox h2{font-size:16px;}
+  .awaken-text{
+    display:block;font-size:40px;font-weight:900;letter-spacing:4px;
+    color:var(--accent);
+    text-shadow:0 0 12px rgba(232,178,61,0.85), 0 0 24px rgba(232,178,61,0.5);
+    margin-bottom:6px;
+  }
   #modalBox button{
     margin-top:12px;padding:10px 20px;border:none;border-radius:10px;
     background:var(--accent2);color:#173a13;font-weight:bold;cursor:pointer;
@@ -303,16 +309,25 @@ const SPECIES = {
   ]
 };
 const TIER_LABEL = {common:'ノーマル',uncommon:'アンコモン',rare:'レア',superrare:'超レア'};
-// Tier is decided by care QUALITY (time-weighted average of hunger/stamina/mood
-// while raising the larva), not by total growth spent -- growth is fixed at ~450
-// no matter what, so a growth-based cutoff could never actually reach the lower
-// tiers. Quality is naturally bounded 0-100, so all four tiers stay reachable.
-const TIERS = [
-  {name:'superrare', min:85},
-  {name:'rare', min:65},
-  {name:'uncommon', min:45},
-  {name:'common', min:0}
+// The adult species is a weighted random roll, not a hard cutoff: care QUALITY
+// (0-100, changed only by discrete events -- injuries, the rare awakening
+// event -- never by elapsed time) skews the roll toward rarer tiers without
+// ever making any tier fully guaranteed or fully impossible.
+const TIER_ROLL_CUTOFFS = [
+  {name:'common',    max:0.55},
+  {name:'uncommon',  max:0.85},
+  {name:'rare',      max:0.98},
+  {name:'superrare', max:1.01}
 ];
+const TIER_QUALITY_SKEW = 4;
+
+function rollTier(quality){
+  const s = clamp(quality,0,100)/100;
+  const p = 1/(1 + TIER_QUALITY_SKEW*s);
+  const rAdj = Math.pow(Math.random(), p);
+  for(const t of TIER_ROLL_CUTOFFS){ if(rAdj < t.max) return t.name; }
+  return 'superrare';
+}
 
 const FAMILY_LABEL = {kabuto:'カブトムシ系', kuwa:'クワガタ系'};
 
@@ -334,6 +349,10 @@ const MIN_TRAIN_STAMINA = 5;
 const INJURY_DURATION_MS = 45000;
 const INJURY_MOOD_PENALTY = 25;
 const INJURY_STAT_PENALTY = 3;
+const INJURY_QUALITY_PENALTY = 25;
+
+const AWAKENING_CHANCE = 0.1;
+const AWAKENING_QUALITY_BONUS = 20;
 
 function injuryChance(stamina){
   // 0% at stamina 60+, ramps up to 45% as stamina approaches 0
@@ -456,30 +475,17 @@ function applyElapsed(pet, ms){
   // going hungry sours the mood much faster than normal
   const moodRate = pet.hunger < 30 ? DECAY.moodDecayPerSec * 4 : DECAY.moodDecayPerSec;
   pet.mood = clamp(pet.mood - moodRate*sec, 0, 100);
-
-  // time-weighted average of hunger/stamina/mood -- this is what decides the
-  // adult's rarity tier, so consistently good care (not just total effort) pays off
-  const quality = (pet.hunger + pet.stamina + pet.mood) / 3;
-  pet.careSum = (pet.careSum||0) + quality*sec;
-  pet.careTime = (pet.careTime||0) + sec;
 }
 
+// Care quality only ever moves via discrete events (injury, the awakening
+// event) -- never drifts with elapsed real time -- then skews the random
+// species roll at eclosion. See rollTier().
 function careQuality(pet){
-  if(!pet.careTime) return (pet.hunger+pet.stamina+pet.mood)/3;
-  return pet.careSum / pet.careTime;
-}
-
-function tierForQuality(quality){
-  for(const t of TIERS){ if(quality >= t.min) return t.name; }
-  return 'common';
+  return clamp(pet.careQuality, 0, 100);
 }
 
 function applyInjuryQualityPenalty(pet){
-  // getting hurt is a real, lasting mark on the care record: mix in a large
-  // zero-quality block (weighted at 70% of time raised so far) so the running
-  // average drops by roughly 40%, regardless of how far along the pet is
-  const weight = Math.max(30, (pet.careTime||0) * 0.7);
-  pet.careTime = (pet.careTime||0) + weight;
+  pet.careQuality = clamp(pet.careQuality - INJURY_QUALITY_PENALTY, 0, 100);
 }
 
 function updateInjuryStatus(pet){
@@ -546,8 +552,7 @@ function hatchEgg(family){
     mood: 80,
     injured: false,
     injuredUntil: 0,
-    careSum: 0,
-    careTime: 0,
+    careQuality: 50,
     trained: {power:0, speed:0, technique:0},
     stageStart: Date.now(),
     pupaEndAt: null,
@@ -666,7 +671,12 @@ function checkEvolution(){
     } else {
       pet.stage = 'pupa';
       pet.pupaEndAt = Date.now() + PUPA_DURATION_MS;
-      showEvoModal(`さなぎになった…<br>しばらく静かに見守ろう。`, pupaSVG());
+      if(Math.random() < AWAKENING_CHANCE){
+        pet.careQuality = clamp(pet.careQuality + AWAKENING_QUALITY_BONUS, 0, 100);
+        showEvoModal(`<span class="awaken-text">覚醒</span><br>お世話の質が20上がりました！`, pupaSVG());
+      } else {
+        showEvoModal(`さなぎになった…<br>しばらく静かに見守ろう。`, pupaSVG());
+      }
     }
   }
 }
@@ -674,7 +684,7 @@ function checkEvolution(){
 function finishPupa(){
   const pet = state.pet;
   if(!pet || pet.stage!=='pupa') return;
-  const tier = tierForQuality(careQuality(pet));
+  const tier = rollTier(careQuality(pet));
   const list = SPECIES[pet.family];
   const sp = list.find(s=>s.tier===tier) || list[0];
   pet.speciesId = sp.id;
@@ -805,7 +815,6 @@ function renderRaise(){
     if(isInjured) warnings.push(`🩹 けがをしています（あと${Math.ceil((pet.injuredUntil-now)/1000)}秒）。回復するまでトレーニングはできません。`);
     else if(pet.stamina<40) warnings.push('⚠ スタミナが少ないです。無理にトレーニングすると、けがをするかもしれません…（低いほど危険です）');
     const warnHtml = warnings.map(w=>`<div class="warn">${w}</div>`).join('');
-    const currentTier = tierForQuality(careQuality(pet));
 
     el.innerHTML = `
       <div class="panel center">
@@ -842,9 +851,9 @@ function renderRaise(){
           <div class="stat-chip">💪 力 <b>${pet.trained.power}</b></div>
           <div class="stat-chip">⚡ 速さ <b>${pet.trained.speed}</b></div>
           <div class="stat-chip">🎯 技 <b>${pet.trained.technique}</b></div>
-          <div class="stat-chip">❤ お世話の質 <b>${Math.round(careQuality(pet))}<span class="badge ${currentTier}">${TIER_LABEL[currentTier]}</span></b></div>
+          <div class="stat-chip">❤ お世話の質 <b>${Math.round(careQuality(pet))}</b></div>
         </div>
-        <p style="text-align:center;margin-top:2px;">満腹度・スタミナ・きげんを高く保つほど、生まれる成虫のレア度が上がります。</p>
+        <p style="text-align:center;margin-top:2px;">お世話の質が高いほど、レアな成虫が生まれやすくなります(結果には運も影響します)。けがをすると質が大きく下がり、さなぎになる瞬間にまれに「覚醒」が起きると質が上がります。</p>
       </div>
     `;
     document.getElementById('btnFeed').onclick = doFeed;
