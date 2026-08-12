@@ -133,7 +133,6 @@
   .meter-fill{height:100%;border-radius:6px;transition:width .4s ease;}
   .fill-hunger{background:linear-gradient(90deg,#e8b23d,#f4d374);}
   .fill-stamina{background:linear-gradient(90deg,#4f9ee0,#7cc4f5);}
-  .fill-mood{background:linear-gradient(90deg,#e0608a,#f090b0);}
   .fill-hp{background:linear-gradient(90deg,#7bc96f,#a8e79c);}
   .fill-growth{background:linear-gradient(90deg,#b98af0,#d9b8f7);}
   .stat-grid{
@@ -164,7 +163,6 @@
     background:#4a4a4a;color:#8a8a8a;box-shadow:0 3px 0 #2c2c2c;cursor:not-allowed;
   }
   button.act.blue{background:linear-gradient(180deg,#5aa0e6,#3672b8);color:#eef6ff;box-shadow:0 3px 0 #244d80;}
-  button.act.pink{background:linear-gradient(180deg,#e6789f,#c94d78);color:#fff0f5;box-shadow:0 3px 0 #8f2f52;}
   button.act.gold{background:linear-gradient(180deg,var(--accent),#c98f22);color:#3a2400;box-shadow:0 3px 0 #8a6316;}
   button.small{padding:6px 8px;font-size:11px;border-radius:8px;}
   .btn-icon{width:15px;height:15px;object-fit:contain;vertical-align:-3px;margin-right:2px;}
@@ -342,19 +340,18 @@ const IMG = {
 const STAGE_THRESHOLDS = [100,150,200]; // larva1->2, 2->3, 3->pupa
 const PUPA_DURATION_MS = 60*1000;
 
-const COOLDOWN = { feed:6000, train:10000, pat:4000, rest:15000 };
-const DECAY = { hungerPerSec: 1/60, staminaRegenPerSec: 1/45, moodDecayPerSec: 1/90 };
+const COOLDOWN = { feed:6000, train:10000, rest:15000 };
+const DECAY = { hungerPerSec: 1/60, staminaRegenPerSec: 1/45 };
 
 const MIN_TRAIN_STAMINA = 5;
 const INJURY_DURATION_MS = 45000;
-const INJURY_MOOD_PENALTY = 25;
 const INJURY_STAT_PENALTY = 3;
 
 const AWAKENING_CHANCE = 0.1;
 
 // 育成度 (0-100) is the trained power+speed+technique total, scaled against the
 // highest sum a larva can realistically end adulthood with. Verified by
-// simulating several playstyles (pure-pat: 0, casual mixed: ~25-40, deliberate
+// simulating several playstyles (no training: 0, casual mixed: ~25-40, deliberate
 // balanced training: ~80, all-in training that never feeds: ~185-190) --
 // 185 keeps that whole spread meaningful across 0-100 instead of everyone
 // clustering near the top.
@@ -480,9 +477,6 @@ function applyElapsed(pet, ms){
   if(sec<=0) return;
   pet.hunger = clamp(pet.hunger - DECAY.hungerPerSec*sec, 0, 100);
   pet.stamina = clamp(pet.stamina + DECAY.staminaRegenPerSec*sec, 0, 100);
-  // going hungry sours the mood much faster than normal
-  const moodRate = pet.hunger < 30 ? DECAY.moodDecayPerSec * 4 : DECAY.moodDecayPerSec;
-  pet.mood = clamp(pet.mood - moodRate*sec, 0, 100);
 }
 
 // 育成度 is derived from trained power+speed+technique (so it only ever moves
@@ -558,7 +552,6 @@ function hatchEgg(family){
     growth: 0,
     hunger: 80,
     stamina: 80,
-    mood: 80,
     injured: false,
     injuredUntil: 0,
     ikuseiBonus: 0,
@@ -566,7 +559,7 @@ function hatchEgg(family){
     stageStart: Date.now(),
     pupaEndAt: null,
     speciesId: null,
-    cooldowns: {feed:0, train:0, pat:0, rest:0},
+    cooldowns: {feed:0, train:0, rest:0},
     hpNow: null
   };
   save();
@@ -574,7 +567,7 @@ function hatchEgg(family){
 }
 
 function effMultiplier(pet){
-  if(pet.hunger<20 || pet.stamina<10 || pet.mood<30) return 0.5;
+  if(pet.hunger<20 || pet.stamina<10) return 0.5;
   return 1.0;
 }
 
@@ -585,7 +578,6 @@ function doFeed(){
   if(now < pet.cooldowns.feed) return;
   const eff = effMultiplier(pet);
   pet.hunger = clamp(pet.hunger + 25, 0, 100);
-  pet.mood = clamp(pet.mood + 5, 0, 100);
   const gain = 10*eff;
   pet.growth += gain;
   const statBump = Math.round(2*eff);
@@ -625,7 +617,6 @@ function doTrain(stat){
   if(gotInjured){
     pet.injured = true;
     pet.injuredUntil = now + INJURY_DURATION_MS;
-    pet.mood = clamp(pet.mood - INJURY_MOOD_PENALTY, 0, 100);
     pet.trained.power = Math.max(0, pet.trained.power - INJURY_STAT_PENALTY);
     pet.trained.speed = Math.max(0, pet.trained.speed - INJURY_STAT_PENALTY);
     pet.trained.technique = Math.max(0, pet.trained.technique - INJURY_STAT_PENALTY);
@@ -635,24 +626,9 @@ function doTrain(stat){
     return;
   }
 
-  pet.mood = clamp(pet.mood + 3, 0, 100);
   const gain = 18*eff;
   pet.growth += gain;
   pet.trained[stat] += Math.round(7*eff);
-  checkEvolution();
-  save(); renderAll();
-}
-
-function doPat(){
-  const pet = state.pet;
-  if(!pet || pet.stage!=='larva') return;
-  const now = Date.now();
-  if(now < pet.cooldowns.pat) return;
-  const eff = effMultiplier(pet);
-  pet.mood = clamp(pet.mood + 12, 0, 100);
-  const gain = 6*eff;
-  pet.growth += gain;
-  pet.cooldowns.pat = now + COOLDOWN.pat;
   checkEvolution();
   save(); renderAll();
 }
@@ -815,12 +791,10 @@ function renderRaise(){
     const isInjured = pet.injured && now < pet.injuredUntil;
     const canFeed = now>=pet.cooldowns.feed;
     const canTrain = now>=pet.cooldowns.train && pet.stamina>=MIN_TRAIN_STAMINA && !isInjured;
-    const canPat = now>=pet.cooldowns.pat;
     const canRest = now>=pet.cooldowns.rest;
 
     const warnings = [];
-    if(pet.hunger<20) warnings.push('⚠ おなかがすいています。放っておくときげんも悪くなります。えさやりをしてあげましょう。');
-    if(pet.mood<30) warnings.push('⚠ きげんが悪いです。お世話の効率が下がっています。なでたりえさをあげたりしてご機嫌を取りましょう。');
+    if(pet.hunger<20) warnings.push('⚠ おなかがすいています。えさやりをしてあげましょう（成長効率が下がります）。');
     if(isInjured) warnings.push(`🩹 けがをしています（あと${Math.ceil((pet.injuredUntil-now)/1000)}秒）。回復するまでトレーニングはできません。`);
     else if(pet.stamina<40) warnings.push('⚠ スタミナが少ないです。無理にトレーニングすると、けがをするかもしれません…（低いほど危険です）');
     const warnHtml = warnings.map(w=>`<div class="warn">${w}</div>`).join('');
@@ -843,14 +817,9 @@ function renderRaise(){
           <div class="meter-label"><span>スタミナ</span><span>${Math.round(pet.stamina)}</span></div>
           <div class="meter-bg"><div class="meter-fill fill-stamina" style="width:${pet.stamina}%"></div></div>
         </div>
-        <div class="meter-row">
-          <div class="meter-label"><span>きげん</span><span>${Math.round(pet.mood)}</span></div>
-          <div class="meter-bg"><div class="meter-fill fill-mood" style="width:${pet.mood}%"></div></div>
-        </div>
         ${warnHtml}
         <div class="actions">
           <button class="act" id="btnFeed" ${canFeed?'':'disabled'}><img class="btn-icon" src="${IMG.food}" alt=""> えさやり<span class="cooldown">${cdText('feed')}</span></button>
-          <button class="act pink" id="btnPat" ${canPat?'':'disabled'}>✋ なでる<span class="cooldown">${cdText('pat')}</span></button>
           <button class="act blue" id="btnTrainPower" ${canTrain?'':'disabled'}>💪 力トレ<span class="cooldown">${cdText('train')}</span></button>
           <button class="act blue" id="btnTrainSpeed" ${canTrain?'':'disabled'}>⚡ 速さトレ<span class="cooldown">${cdText('train')}</span></button>
           <button class="act blue" id="btnTrainTech" ${canTrain?'':'disabled'}>🎯 技トレ<span class="cooldown">${cdText('train')}</span></button>
@@ -866,7 +835,6 @@ function renderRaise(){
       </div>
     `;
     document.getElementById('btnFeed').onclick = doFeed;
-    document.getElementById('btnPat').onclick = doPat;
     document.getElementById('btnTrainPower').onclick = ()=>doTrain('power');
     document.getElementById('btnTrainSpeed').onclick = ()=>doTrain('speed');
     document.getElementById('btnTrainTech').onclick = ()=>doTrain('technique');
